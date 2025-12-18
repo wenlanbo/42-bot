@@ -1,0 +1,9 @@
+node_modules
+.env
+*.log
+dist
+server/tracked-wallets.json
+lib/for-wenbo-main/generated/
+lib/for-wenbo-main/schema.json
+lib/for-wenbo-main/schema.graphql
+

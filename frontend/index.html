@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallet Tracker - 42 Bot</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    button {
+      padding: 12px 24px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #5568d3;
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .btn-danger {
+      background: #e74c3c;
+    }
+
+    .btn-danger:hover {
+      background: #c0392b;
+    }
+
+    .btn-secondary {
+      background: #95a5a6;
+    }
+
+    .btn-secondary:hover {
+      background: #7f8c8d;
+    }
+
+    .wallet-list {
+      display: grid;
+      gap: 15px;
+    }
+
+    .wallet-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    .wallet-address {
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .wallet-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .portfolio-section {
+      margin-top: 20px;
+    }
+
+    .portfolio-item {
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 4px solid #27ae60;
+    }
+
+    .portfolio-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #27ae60;
+      margin-top: 5px;
+    }
+
+    .positions-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .positions-table th,
+    .positions-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .positions-table th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .positions-table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-resolved {
+      background: #3498db;
+      color: white;
+    }
+
+    .badge-active {
+      background: #27ae60;
+      color: white;
+    }
+
+    .badge-winning {
+      background: #2ecc71;
+      color: white;
+    }
+
+    .badge-losing {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+
+    .error {
+      background: #fee;
+      color: #c33;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 4px solid #c33;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .refresh-btn {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Wallet Tracker</h1>
+
+    <div class="card">
+      <h2 class="section-title">Add Wallet to Track</h2>
+      <div class="input-group">
+        <input 
+          type="text" 
+          id="walletInput" 
+          placeholder="Enter wallet address (0x...)" 
+          maxlength="42"
+        />
+        <button onclick="addWallet()">Add Wallet</button>
+      </div>
+      <div id="errorMessage"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Tracked Wallets</h2>
+      <div id="walletList" class="wallet-list">
+        <div class="loading">Loading...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Portfolio Overview</h2>
+      <button class="btn-secondary refresh-btn" onclick="loadPortfolios()">Refresh Portfolios</button>
+      <div id="portfolioList" class="portfolio-section">
+        <div class="loading">Click refresh to load portfolios</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Positions</h2>
+      <button class="btn-secondary refresh-btn" onclick="loadPositions()">Refresh Positions</button>
+      <div id="positionsList">
+        <div class="loading">Click refresh to load positions</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:3001/api';
+
+    // Load tracked wallets on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadTrackedWallets();
+    });
+
+    // Handle Enter key in input
+    document.getElementById('walletInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addWallet();
+      }
+    });
+
+    async function addWallet() {
+      const input = document.getElementById('walletInput');
+      const walletAddress = input.value.trim();
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.innerHTML = '';
+
+      if (!walletAddress) {
+        showError('Please enter a wallet address');
+        return;
+      }
+
+      if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+        showError('Invalid wallet address format');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/tracked-wallets`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ walletAddress }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showError(data.error || 'Failed to add wallet');
+          return;
+        }
+
+        input.value = '';
+        loadTrackedWallets();
+      } catch (error) {
+        showError('Network error: ' + error.message);
+      }
+    }
+
+    async function removeWallet(walletAddress) {
+      if (!confirm(`Remove ${walletAddress} from tracking?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/tracked-wallets/${walletAddress}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          alert(data.error || 'Failed to remove wallet');
+          return;
+        }
+
+        loadTrackedWallets();
+        document.getElementById('portfolioList').innerHTML = '<div class="loading">Click refresh to load portfolios</div>';
+        document.getElementById('positionsList').innerHTML = '<div class="loading">Click refresh to load positions</div>';
+      } catch (error) {
+        alert('Network error: ' + error.message);
+      }
+    }
+
+    async function loadTrackedWallets() {
+      const listDiv = document.getElementById('walletList');
+      listDiv.innerHTML = '<div class="loading">Loading...</div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/tracked-wallets`);
+        const data = await response.json();
+
+        if (data.wallets.length === 0) {
+          listDiv.innerHTML = '<div class="empty-state">No wallets tracked yet. Add one above!</div>';
+          return;
+        }
+
+        listDiv.innerHTML = data.wallets.map(wallet => `
+          <div class="wallet-item">
+            <div class="wallet-address">${wallet}</div>
+            <div class="wallet-actions">
+              <button class="btn-secondary" onclick="viewWallet('${wallet}')">View Details</button>
+              <button class="btn-danger" onclick="removeWallet('${wallet}')">Remove</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        listDiv.innerHTML = `<div class="error">Error loading wallets: ${error.message}</div>`;
+      }
+    }
+
+    async function loadPortfolios() {
+      const portfolioDiv = document.getElementById('portfolioList');
+      portfolioDiv.innerHTML = '<div class="loading">Loading portfolios...</div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/tracked-wallets/portfolio`);
+        const data = await response.json();
+
+        if (data.results.length === 0) {
+          portfolioDiv.innerHTML = '<div class="empty-state">No tracked wallets to show portfolios for</div>';
+          return;
+        }
+
+        portfolioDiv.innerHTML = data.results.map(result => `
+          <div class="portfolio-item">
+            <div class="wallet-address">${result.wallet}</div>
+            <div class="portfolio-value">$${result.portfolio.toFixed(2)}</div>
+            ${result.error ? `<div class="error">${result.error}</div>` : ''}
+          </div>
+        `).join('');
+      } catch (error) {
+        portfolioDiv.innerHTML = `<div class="error">Error loading portfolios: ${error.message}</div>`;
+      }
+    }
+
+    async function loadPositions() {
+      const positionsDiv = document.getElementById('positionsList');
+      positionsDiv.innerHTML = '<div class="loading">Loading positions...</div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/tracked-wallets/positions`);
+        const data = await response.json();
+
+        if (data.results.length === 0) {
+          positionsDiv.innerHTML = '<div class="empty-state">No tracked wallets to show positions for</div>';
+          return;
+        }
+
+        positionsDiv.innerHTML = data.results.map(result => {
+          if (result.positions.length === 0) {
+            return `
+              <div class="portfolio-item">
+                <div class="wallet-address">${result.wallet}</div>
+                <div style="margin-top: 10px; color: #999;">No active positions</div>
+              </div>
+            `;
+          }
+
+          return `
+            <div style="margin-bottom: 30px;">
+              <div class="wallet-address" style="margin-bottom: 15px; font-weight: 600;">${result.wallet}</div>
+              <table class="positions-table">
+                <thead>
+                  <tr>
+                    <th>Market</th>
+                    <th>Token ID</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Value</th>
+                    <th>Realized PnL</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${result.positions.map(pos => `
+                    <tr>
+                      <td class="wallet-address">${pos.market_address.slice(0, 10)}...</td>
+                      <td>${pos.token_id}</td>
+                      <td>${pos.quantity.toFixed(4)}</td>
+                      <td>$${pos.current_price.toFixed(4)}</td>
+                      <td>$${pos.value.toFixed(2)}</td>
+                      <td style="color: ${pos.realized_pnl >= 0 ? '#27ae60' : '#e74c3c'}">
+                        ${pos.realized_pnl >= 0 ? '+' : ''}${pos.realized_pnl.toFixed(2)}
+                      </td>
+                      <td>
+                        ${pos.is_resolved 
+                          ? `<span class="badge badge-resolved">Resolved</span> ${pos.is_winning ? '<span class="badge badge-winning">Winning</span>' : '<span class="badge badge-losing">Losing</span>'}`
+                          : '<span class="badge badge-active">Active</span>'
+                        }
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        positionsDiv.innerHTML = `<div class="error">Error loading positions: ${error.message}</div>`;
+      }
+    }
+
+    async function viewWallet(walletAddress) {
+      // Load portfolio and positions for this specific wallet
+      try {
+        const [portfolioRes, positionsRes] = await Promise.all([
+          fetch(`${API_BASE}/wallet/${walletAddress}/portfolio`),
+          fetch(`${API_BASE}/wallet/${walletAddress}/positions`)
+        ]);
+
+        const portfolioData = await portfolioRes.json();
+        const positionsData = await positionsRes.json();
+
+        const details = `
+          Wallet: ${walletAddress}
+          Portfolio: $${portfolioData.portfolio.toFixed(2)}
+          Active Positions: ${positionsData.positions.length}
+        `;
+
+        alert(details);
+      } catch (error) {
+        alert('Error loading wallet details: ' + error.message);
+      }
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.innerHTML = `<div class="error">${message}</div>`;
+      setTimeout(() => {
+        errorDiv.innerHTML = '';
+      }, 5000);
+    }
+  </script>
+</body>
+</html>
+

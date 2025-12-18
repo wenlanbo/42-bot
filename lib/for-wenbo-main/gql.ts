@@ -1,5 +1,8 @@
 import { createClient } from "graphql-ws";
 import { GraphQLClient } from "graphql-request";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const GQL_ENDPOINT =
   process.env.NEXT_PUBLIC_HASURA_GQL_ENDPOINT ||
@@ -11,7 +14,14 @@ const GQL_ENDPOINT_WS = (() => {
   return url.toString();
 })();
 
-export const GQL_CLIENT = new GraphQLClient(GQL_ENDPOINT);
+const headers: Record<string, string> = {};
+if (process.env.HASURA_ADMIN_SECRET) {
+  headers["x-hasura-admin-secret"] = process.env.HASURA_ADMIN_SECRET;
+}
+
+export const GQL_CLIENT = new GraphQLClient(GQL_ENDPOINT, {
+  headers,
+});
 export const GQL_CLIENT_WS = createGqlWSClient();
 
 function createGqlWSClient(): ReturnType<typeof createClient> {
