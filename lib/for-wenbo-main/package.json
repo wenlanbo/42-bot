@@ -1,0 +1,32 @@
+{
+  "name": "leaderboard",
+  "version": "1.0.0",
+  "description": "Leaderboard queries for ft-dapp",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "codegen": "graphql-codegen",
+    "leaderboard:ot": "ts-node ./leaderboard/ot.ts",
+    "leaderboard:profit": "ts-node ./leaderboard/profit.ts",
+    "leaderboard:portfolio": "ts-node ./leaderboard/portfolio.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "graphql": "^16.11.0",
+    "graphql-request": "^5.2.0",
+    "graphql-ws": "^6.0.6",
+    "viem": "^2.40.3"
+  },
+  "devDependencies": {
+    "@graphql-codegen/cli": "^6.1.0",
+    "@graphql-codegen/import-types-preset": "^3.0.1",
+    "@graphql-codegen/introspection": "^5.0.0",
+    "@graphql-codegen/schema-ast": "^5.0.0",
+    "@graphql-codegen/typescript": "^5.0.6",
+    "@graphql-codegen/typescript-operations": "^5.0.6",
+    "@types/node": "^20.0.0",
+    "graphql-config": "^5.1.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.0.0"
+  }
+}
