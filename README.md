@@ -64,6 +64,9 @@ NEXT_PUBLIC_RPC_URL=https://bsc-dataseed.binance.org/
 
 # Server Port (optional, defaults to 3001)
 PORT=3001
+
+# Slack Webhook URL for market notifications (optional)
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 ```
 
 ### 3. Generate GraphQL Types (if needed)
@@ -141,6 +144,39 @@ Then open `http://localhost:8000` in your browser.
 
 Tracked wallets are stored in `server/tracked-wallets.json` as a simple JSON array. This file is automatically created on first use.
 
+## Market Monitoring
+
+The server includes a market monitoring service that:
+
+- **Checks for new markets every 30 minutes** (automatic in local development)
+- **Sends Slack notifications** when new markets are detected
+- **Tracks known markets** to avoid duplicate notifications
+
+### Setup for Market Monitoring
+
+1. **Slack Webhook Setup:**
+   - Go to your Slack workspace
+   - Create a new Slack App or use an existing one
+   - Enable "Incoming Webhooks"
+   - Create a webhook for the channel where you want notifications
+   - Add the webhook URL to your `.env` file as `SLACK_WEBHOOK_URL`
+
+2. **Local Development:**
+   - The monitoring service starts automatically when you run the server
+   - It runs every 30 minutes and sends notifications to Slack
+
+3. **Vercel Deployment:**
+   - The `vercel.json` includes a cron job configuration
+   - Vercel will automatically call `/api/cron/check-markets` every 30 minutes
+   - Make sure to set `SLACK_WEBHOOK_URL` in your Vercel environment variables
+
+### Manual Market Check
+
+You can manually trigger a market check by calling:
+```bash
+curl -X POST http://localhost:3001/api/markets/check
+```
+
 ## Notes
 
 - Wallet addresses are normalized to lowercase for consistency
@@ -150,3 +186,4 @@ Tracked wallets are stored in `server/tracked-wallets.json` as a simple JSON arr
   - Cash holdings from BSC chain (USDC balance)
 - Positions only show non-zero quantities
 - The system queries the GraphQL API with pagination to handle large datasets
+- Market monitoring stores known markets in `server/known-markets.json` (local) or `/tmp/known-markets.json` (serverless)

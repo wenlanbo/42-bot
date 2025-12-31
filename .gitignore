@@ -3,7 +3,9 @@ node_modules
 *.log
 dist
 server/tracked-wallets.json
+server/known-markets.json
 lib/for-wenbo-main/generated/
 lib/for-wenbo-main/schema.json
 lib/for-wenbo-main/schema.graphql
+.DS_Store
 

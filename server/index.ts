@@ -3,6 +3,7 @@ import cors from "cors";
 import fs from "fs/promises";
 import path from "path";
 import { getWalletPortfolio, getWalletPositions } from "../lib/for-wenbo-main/queries/wallet";
+import { startMarketMonitoring } from "./market-monitor";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -192,6 +193,21 @@ app.get("/api/tracked-wallets/positions", async (req, res) => {
   }
 });
 
+// Market monitoring endpoint (can be called manually or by cron)
+app.post("/api/markets/check", async (req, res) => {
+  try {
+    const { checkForNewMarkets } = await import("./market-monitor");
+    await checkForNewMarkets();
+    res.json({ success: true, message: "Market check completed" });
+  } catch (error) {
+    console.error("Error checking markets:", error);
+    res.status(500).json({ 
+      error: "Failed to check markets",
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Only start the server if this file is run directly (not imported as a module)
 // In Vercel/serverless environments, the app will be exported and handled by the platform
 // Check if we're running in a serverless environment
@@ -200,6 +216,10 @@ const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_N
 if (!isServerless && typeof require !== 'undefined' && require.main === module) {
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    // Start market monitoring when server starts (only in non-serverless environments)
+    // Note: In serverless environments (Vercel), use the /api/markets/check endpoint
+    // with Vercel Cron Jobs instead (see vercel.json for cron configuration)
+    startMarketMonitoring();
   });
 }
 

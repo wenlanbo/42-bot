@@ -4,12 +4,22 @@
     {
       "src": "api/index.ts",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/cron/check-markets.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
       "dest": "/api/index.ts"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/check-markets",
+      "schedule": "*/30 * * * *"
     }
   ]
 }
