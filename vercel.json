@@ -8,6 +8,10 @@
     {
       "src": "api/cron/check-markets.ts",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/cron/check-wallet.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -20,6 +24,10 @@
     {
       "path": "/api/cron/check-markets",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/check-wallet",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

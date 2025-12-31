@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { getWalletPortfolio, getWalletPositions } from "../lib/for-wenbo-main/queries/wallet";
 import { startMarketMonitoring } from "./market-monitor";
+import { startWalletMonitoring } from "./wallet-monitor";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -208,6 +209,21 @@ app.post("/api/markets/check", async (req, res) => {
   }
 });
 
+// Wallet monitoring endpoint (can be called manually or by cron)
+app.post("/api/wallet/check", async (req, res) => {
+  try {
+    const { checkWalletAndSendReport } = await import("./wallet-monitor");
+    await checkWalletAndSendReport();
+    res.json({ success: true, message: "Wallet check completed" });
+  } catch (error) {
+    console.error("Error checking wallet:", error);
+    res.status(500).json({ 
+      error: "Failed to check wallet",
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Only start the server if this file is run directly (not imported as a module)
 // In Vercel/serverless environments, the app will be exported and handled by the platform
 // Check if we're running in a serverless environment
@@ -220,6 +236,8 @@ if (!isServerless && typeof require !== 'undefined' && require.main === module) 
     // Note: In serverless environments (Vercel), use the /api/markets/check endpoint
     // with Vercel Cron Jobs instead (see vercel.json for cron configuration)
     startMarketMonitoring();
+    // Start wallet monitoring (checks every 5 minutes)
+    startWalletMonitoring();
   });
 }
 

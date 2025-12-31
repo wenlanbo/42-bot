@@ -177,6 +177,40 @@ You can manually trigger a market check by calling:
 curl -X POST http://localhost:3001/api/markets/check
 ```
 
+## Wallet Monitoring
+
+The server includes a wallet monitoring service that:
+
+- **Monitors a hardcoded wallet** (`0x303E912232a80607D08705cc679F7DbfBb9FC6b2`)
+- **Checks every 5 minutes** and sends portfolio and positions to Slack
+- **Sends detailed reports** including:
+  - Total portfolio value
+  - Individual position details (value, quantity, price, PnL)
+  - Active vs resolved position counts
+  - Total realized PnL
+
+### Setup for Wallet Monitoring
+
+1. **Slack Webhook Setup:**
+   - Use the same `SLACK_WEBHOOK_URL` as market monitoring
+   - The wallet reports will be sent to the same channel
+
+2. **Local Development:**
+   - The monitoring service starts automatically when you run the server
+   - It runs every 5 minutes and sends reports to Slack
+
+3. **Vercel Deployment:**
+   - The `vercel.json` includes a cron job configuration
+   - Vercel will automatically call `/api/cron/check-wallet` every 5 minutes
+   - Make sure to set `SLACK_WEBHOOK_URL` in your Vercel environment variables
+
+### Manual Wallet Check
+
+You can manually trigger a wallet check by calling:
+```bash
+curl -X POST http://localhost:3001/api/wallet/check
+```
+
 ## Notes
 
 - Wallet addresses are normalized to lowercase for consistency
