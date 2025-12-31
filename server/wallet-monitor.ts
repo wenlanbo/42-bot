@@ -64,9 +64,11 @@ async function sendWalletReportToSlack(
   portfolio: number,
   positions: WalletPosition[]
 ): Promise<void> {
+  console.log(`[SLACK REPORT] Preparing wallet report for ${walletAddress}...`);
+  
   if (!slackWebhookUrl) {
-    console.warn("SLACK_WEBHOOK_URL not configured, skipping notification");
-    return;
+    console.warn("[SLACK REPORT] ⚠️ SLACK_WEBHOOK_URL not configured, skipping notification");
+    throw new Error("SLACK_WEBHOOK_URL is not provided");
   }
 
   const totalPositionsValue = positions.reduce((sum, pos) => sum + pos.value, 0);
@@ -151,6 +153,9 @@ async function sendWalletReportToSlack(
   };
 
   try {
+    console.log(`[SLACK REPORT] Sending request to Slack webhook...`);
+    console.log(`[SLACK REPORT] Webhook URL: ${slackWebhookUrl.substring(0, 30)}...`);
+    
     const response = await fetch(slackWebhookUrl, {
       method: "POST",
       headers: {
@@ -159,18 +164,25 @@ async function sendWalletReportToSlack(
       body: JSON.stringify(payload),
     });
 
+    console.log(`[SLACK REPORT] Response status: ${response.status} ${response.statusText}`);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`[SLACK REPORT] ❌ Slack API error response: ${errorText}`);
       throw new Error(
         `Slack API error: ${response.status} ${response.statusText} - ${errorText}`
       );
     }
 
-    console.log(
-      `Successfully sent wallet report to Slack for ${walletAddress}`
-    );
+    const responseText = await response.text();
+    console.log(`[SLACK REPORT] ✅ Successfully sent wallet report to Slack for ${walletAddress}`);
+    console.log(`[SLACK REPORT] Response: ${responseText}`);
   } catch (error) {
-    console.error("Failed to send wallet report to Slack:", error);
+    console.error("[SLACK REPORT] ❌ Failed to send wallet report to Slack:", error);
+    if (error instanceof Error) {
+      console.error("[SLACK REPORT] Error message:", error.message);
+      console.error("[SLACK REPORT] Error stack:", error.stack);
+    }
     throw error;
   }
 }
@@ -179,21 +191,29 @@ async function sendWalletReportToSlack(
  * Check wallet portfolio and positions and send to Slack
  */
 export async function checkWalletAndSendReport(): Promise<void> {
+  console.log(`[WALLET MONITOR] Starting check for wallet ${TRACKED_WALLET}`);
+  console.log(`[WALLET MONITOR] SLACK_WEBHOOK_URL configured: ${!!process.env.SLACK_WEBHOOK_URL}`);
+  
   try {
-    console.log(`Checking wallet ${TRACKED_WALLET}...`);
-    
     // Send test message on first run (for deployment notification)
     if (isFirstRun) {
+      console.log(`[WALLET MONITOR] First run detected, sending test message...`);
       isFirstRun = false;
       try {
         const { sendSlackTestMessage } = await import("./slack-test");
         await sendSlackTestMessage();
-        console.log("Sent deployment test message to Slack");
+        console.log("[WALLET MONITOR] ✅ Successfully sent deployment test message to Slack");
       } catch (error) {
-        console.error("Failed to send deployment test message:", error);
+        console.error("[WALLET MONITOR] ❌ Failed to send deployment test message:", error);
+        if (error instanceof Error) {
+          console.error("[WALLET MONITOR] Error details:", error.message);
+          console.error("[WALLET MONITOR] Error stack:", error.stack);
+        }
         // Continue with wallet check even if test message fails
       }
     }
+    
+    console.log(`[WALLET MONITOR] Fetching portfolio and positions...`);
     
     // Fetch portfolio and positions
     const [portfolio, positions] = await Promise.all([
@@ -202,26 +222,43 @@ export async function checkWalletAndSendReport(): Promise<void> {
     ]);
 
     console.log(
-      `Wallet ${TRACKED_WALLET} - Portfolio: $${portfolio.toFixed(2)}, Positions: ${positions.length}`
+      `[WALLET MONITOR] ✅ Fetched data - Portfolio: $${portfolio.toFixed(2)}, Positions: ${positions.length}`
     );
 
     // Send Slack notification
     const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
     if (slackWebhookUrl) {
-      await sendWalletReportToSlack(
-        slackWebhookUrl,
-        TRACKED_WALLET,
-        portfolio,
-        positions
-      );
+      console.log(`[WALLET MONITOR] Sending wallet report to Slack...`);
+      try {
+        await sendWalletReportToSlack(
+          slackWebhookUrl,
+          TRACKED_WALLET,
+          portfolio,
+          positions
+        );
+        console.log(`[WALLET MONITOR] ✅ Successfully sent wallet report to Slack`);
+      } catch (error) {
+        console.error("[WALLET MONITOR] ❌ Failed to send wallet report to Slack:", error);
+        if (error instanceof Error) {
+          console.error("[WALLET MONITOR] Error details:", error.message);
+          console.error("[WALLET MONITOR] Error stack:", error.stack);
+        }
+        // Re-throw to be caught by outer catch
+        throw error;
+      }
     } else {
       console.warn(
-        "SLACK_WEBHOOK_URL not set - skipping notification"
+        "[WALLET MONITOR] ⚠️ SLACK_WEBHOOK_URL not set - skipping notification"
       );
     }
   } catch (error) {
-    console.error("Error checking wallet:", error);
-    // Don't throw - we want the interval to continue running
+    console.error("[WALLET MONITOR] ❌ Error checking wallet:", error);
+    if (error instanceof Error) {
+      console.error("[WALLET MONITOR] Error message:", error.message);
+      console.error("[WALLET MONITOR] Error stack:", error.stack);
+    }
+    // Re-throw so it can be caught by the calling function (cron endpoint)
+    throw error;
   }
 }
 

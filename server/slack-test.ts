@@ -4,10 +4,14 @@
 export async function sendSlackTestMessage(): Promise<void> {
   const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
   
+  console.log(`[SLACK TEST] Checking SLACK_WEBHOOK_URL: ${slackWebhookUrl ? "✅ Configured" : "❌ Not configured"}`);
+  
   if (!slackWebhookUrl) {
-    console.warn("SLACK_WEBHOOK_URL not configured, skipping test message");
-    return;
+    console.warn("[SLACK TEST] ⚠️ SLACK_WEBHOOK_URL not configured, skipping test message");
+    throw new Error("SLACK_WEBHOOK_URL environment variable is not set");
   }
+  
+  console.log(`[SLACK TEST] Preparing test message payload...`);
 
   const timestamp = new Date().toISOString();
   const dateTime = new Date().toLocaleString("en-US", {
@@ -67,6 +71,9 @@ export async function sendSlackTestMessage(): Promise<void> {
   };
 
   try {
+    console.log(`[SLACK TEST] Sending request to Slack webhook...`);
+    console.log(`[SLACK TEST] Webhook URL: ${slackWebhookUrl.substring(0, 30)}...`);
+    
     const response = await fetch(slackWebhookUrl, {
       method: "POST",
       headers: {
@@ -75,16 +82,25 @@ export async function sendSlackTestMessage(): Promise<void> {
       body: JSON.stringify(payload),
     });
 
+    console.log(`[SLACK TEST] Response status: ${response.status} ${response.statusText}`);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`[SLACK TEST] ❌ Slack API error response: ${errorText}`);
       throw new Error(
         `Slack API error: ${response.status} ${response.statusText} - ${errorText}`
       );
     }
 
-    console.log("Successfully sent deployment test message to Slack");
+    const responseText = await response.text();
+    console.log(`[SLACK TEST] ✅ Successfully sent deployment test message to Slack`);
+    console.log(`[SLACK TEST] Response: ${responseText}`);
   } catch (error) {
-    console.error("Failed to send Slack test message:", error);
+    console.error("[SLACK TEST] ❌ Failed to send Slack test message:", error);
+    if (error instanceof Error) {
+      console.error("[SLACK TEST] Error message:", error.message);
+      console.error("[SLACK TEST] Error stack:", error.stack);
+    }
     throw error;
   }
 }

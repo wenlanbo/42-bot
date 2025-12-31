@@ -227,17 +227,36 @@ app.post("/api/wallet/check", async (req, res) => {
 
 // Test Slack notification endpoint
 app.post("/api/slack/test", async (req, res) => {
+  console.log("[API] /api/slack/test endpoint called");
+  console.log(`[API] SLACK_WEBHOOK_URL configured: ${!!process.env.SLACK_WEBHOOK_URL}`);
+  
   try {
     const { sendSlackTestMessage } = await import("./slack-test");
     await sendSlackTestMessage();
+    console.log("[API] ✅ Test message sent successfully");
     res.json({ success: true, message: "Test message sent to Slack" });
   } catch (error) {
-    console.error("Error sending test message:", error);
+    console.error("[API] ❌ Error sending test message:", error);
+    if (error instanceof Error) {
+      console.error("[API] Error details:", error.message);
+      console.error("[API] Error stack:", error.stack);
+    }
     res.status(500).json({ 
       error: "Failed to send test message",
-      message: error instanceof Error ? error.message : "Unknown error"
+      message: error instanceof Error ? error.message : "Unknown error",
+      details: error instanceof Error ? error.stack : undefined
     });
   }
+});
+
+// Debug endpoint to check environment
+app.get("/api/debug/env", (req, res) => {
+  res.json({
+    hasSlackWebhook: !!process.env.SLACK_WEBHOOK_URL,
+    slackWebhookPrefix: process.env.SLACK_WEBHOOK_URL ? process.env.SLACK_WEBHOOK_URL.substring(0, 30) + "..." : "Not set",
+    isVercel: !!process.env.VERCEL,
+    nodeEnv: process.env.NODE_ENV,
+  });
 });
 
 // Only start the server if this file is run directly (not imported as a module)
