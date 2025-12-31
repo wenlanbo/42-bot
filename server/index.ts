@@ -254,6 +254,9 @@ app.get("/api/debug/env", (req, res) => {
   res.json({
     hasSlackWebhook: !!process.env.SLACK_WEBHOOK_URL,
     slackWebhookPrefix: process.env.SLACK_WEBHOOK_URL ? process.env.SLACK_WEBHOOK_URL.substring(0, 30) + "..." : "Not set",
+    hasGraphQLEndpoint: !!(process.env.NEXT_PUBLIC_HASURA_GQL_ENDPOINT || process.env.HASURA_GQL_ENDPOINT),
+    graphQLEndpoint: process.env.NEXT_PUBLIC_HASURA_GQL_ENDPOINT || process.env.HASURA_GQL_ENDPOINT || "Not set (using default localhost:8080)",
+    hasHasuraSecret: !!process.env.HASURA_ADMIN_SECRET,
     isVercel: !!process.env.VERCEL,
     nodeEnv: process.env.NODE_ENV,
   });

@@ -214,12 +214,28 @@ export async function checkWalletAndSendReport(): Promise<void> {
     }
     
     console.log(`[WALLET MONITOR] Fetching portfolio and positions...`);
+    console.log(`[WALLET MONITOR] GraphQL endpoint: ${process.env.NEXT_PUBLIC_HASURA_GQL_ENDPOINT || process.env.HASURA_GQL_ENDPOINT || "Not set (will use localhost:8080)"}`);
     
     // Fetch portfolio and positions
-    const [portfolio, positions] = await Promise.all([
-      getWalletPortfolio(TRACKED_WALLET),
-      getWalletPositions(TRACKED_WALLET),
-    ]);
+    let portfolio: number;
+    let positions: WalletPosition[];
+    
+    try {
+      [portfolio, positions] = await Promise.all([
+        getWalletPortfolio(TRACKED_WALLET),
+        getWalletPositions(TRACKED_WALLET),
+      ]);
+    } catch (error) {
+      console.error("[WALLET MONITOR] ❌ Error fetching wallet data:", error);
+      if (error instanceof Error) {
+        console.error("[WALLET MONITOR] Error message:", error.message);
+        if (error.message.includes("ECONNREFUSED") || error.message.includes("localhost")) {
+          console.error("[WALLET MONITOR] ⚠️ CRITICAL: GraphQL endpoint not configured!");
+          console.error("[WALLET MONITOR] Please set NEXT_PUBLIC_HASURA_GQL_ENDPOINT environment variable in Vercel");
+        }
+      }
+      throw error; // Re-throw to be handled by outer catch
+    }
 
     console.log(
       `[WALLET MONITOR] ✅ Fetched data - Portfolio: $${portfolio.toFixed(2)}, Positions: ${positions.length}`
