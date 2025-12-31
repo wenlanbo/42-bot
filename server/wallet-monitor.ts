@@ -70,6 +70,13 @@ async function sendWalletReportToSlack(
     console.warn("[SLACK REPORT] ⚠️ SLACK_WEBHOOK_URL not configured, skipping notification");
     throw new Error("SLACK_WEBHOOK_URL is not provided");
   }
+  
+  // Validate webhook URL format
+  if (!slackWebhookUrl.startsWith("https://hooks.slack.com/services/")) {
+    console.warn(`[SLACK REPORT] ⚠️ Invalid webhook URL format. Expected to start with 'https://hooks.slack.com/services/'`);
+    console.warn(`[SLACK REPORT] Current URL: ${slackWebhookUrl.substring(0, 50)}...`);
+    throw new Error("Invalid Slack webhook URL format. Must start with 'https://hooks.slack.com/services/'");
+  }
 
   const totalPositionsValue = positions.reduce((sum, pos) => sum + pos.value, 0);
   const activePositionsCount = positions.filter((p) => !p.is_resolved).length;
@@ -175,8 +182,14 @@ async function sendWalletReportToSlack(
     }
 
     const responseText = await response.text();
-    console.log(`[SLACK REPORT] ✅ Successfully sent wallet report to Slack for ${walletAddress}`);
-    console.log(`[SLACK REPORT] Response: ${responseText}`);
+    
+    // Slack webhooks return "ok" on success
+    if (responseText.trim() === "ok") {
+      console.log(`[SLACK REPORT] ✅ Successfully sent wallet report to Slack for ${walletAddress}`);
+    } else {
+      console.warn(`[SLACK REPORT] ⚠️ Unexpected response from Slack: ${responseText}`);
+      console.log(`[SLACK REPORT] ✅ Message sent (response: ${responseText})`);
+    }
   } catch (error) {
     console.error("[SLACK REPORT] ❌ Failed to send wallet report to Slack:", error);
     if (error instanceof Error) {

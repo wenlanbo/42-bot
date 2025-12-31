@@ -49,9 +49,18 @@ async function sendSlackNotification(
   markets: Market[]
 ): Promise<void> {
   if (!slackWebhookUrl) {
-    console.warn("SLACK_WEBHOOK_URL not configured, skipping notification");
+    console.warn("[SLACK MARKET] ⚠️ SLACK_WEBHOOK_URL not configured, skipping notification");
     return;
   }
+  
+  // Validate webhook URL format
+  if (!slackWebhookUrl.startsWith("https://hooks.slack.com/services/")) {
+    console.warn(`[SLACK MARKET] ⚠️ Invalid webhook URL format. Expected to start with 'https://hooks.slack.com/services/'`);
+    console.warn(`[SLACK MARKET] Current URL: ${slackWebhookUrl.substring(0, 50)}...`);
+    throw new Error("Invalid Slack webhook URL format. Must start with 'https://hooks.slack.com/services/'");
+  }
+  
+  console.log(`[SLACK MARKET] Preparing market notification for ${markets.length} market(s)...`);
 
   const blocks = markets.map((market) => ({
     type: "section",
@@ -76,6 +85,8 @@ async function sendSlackNotification(
   };
 
   try {
+    console.log(`[SLACK MARKET] Sending request to Slack webhook...`);
+    
     const response = await fetch(slackWebhookUrl, {
       method: "POST",
       headers: {
@@ -84,18 +95,31 @@ async function sendSlackNotification(
       body: JSON.stringify(payload),
     });
 
+    console.log(`[SLACK MARKET] Response status: ${response.status} ${response.statusText}`);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`[SLACK MARKET] ❌ Slack API error response: ${errorText}`);
       throw new Error(
         `Slack API error: ${response.status} ${response.statusText} - ${errorText}`
       );
     }
 
-    console.log(
-      `Successfully sent Slack notification for ${markets.length} new market(s)`
-    );
+    const responseText = await response.text();
+    
+    // Slack webhooks return "ok" on success
+    if (responseText.trim() === "ok") {
+      console.log(`[SLACK MARKET] ✅ Successfully sent Slack notification for ${markets.length} new market(s)`);
+    } else {
+      console.warn(`[SLACK MARKET] ⚠️ Unexpected response from Slack: ${responseText}`);
+      console.log(`[SLACK MARKET] ✅ Message sent (response: ${responseText})`);
+    }
   } catch (error) {
-    console.error("Failed to send Slack notification:", error);
+    console.error("[SLACK MARKET] ❌ Failed to send Slack notification:", error);
+    if (error instanceof Error) {
+      console.error("[SLACK MARKET] Error message:", error.message);
+      console.error("[SLACK MARKET] Error stack:", error.stack);
+    }
     throw error;
   }
 }

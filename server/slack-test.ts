@@ -11,6 +11,13 @@ export async function sendSlackTestMessage(): Promise<void> {
     throw new Error("SLACK_WEBHOOK_URL environment variable is not set");
   }
   
+  // Validate webhook URL format
+  if (!slackWebhookUrl.startsWith("https://hooks.slack.com/services/")) {
+    console.warn(`[SLACK TEST] ⚠️ Invalid webhook URL format. Expected to start with 'https://hooks.slack.com/services/'`);
+    console.warn(`[SLACK TEST] Current URL: ${slackWebhookUrl.substring(0, 50)}...`);
+    throw new Error("Invalid Slack webhook URL format. Must start with 'https://hooks.slack.com/services/'");
+  }
+  
   console.log(`[SLACK TEST] Preparing test message payload...`);
 
   const timestamp = new Date().toISOString();
@@ -93,8 +100,14 @@ export async function sendSlackTestMessage(): Promise<void> {
     }
 
     const responseText = await response.text();
-    console.log(`[SLACK TEST] ✅ Successfully sent deployment test message to Slack`);
-    console.log(`[SLACK TEST] Response: ${responseText}`);
+    
+    // Slack webhooks return "ok" on success
+    if (responseText.trim() === "ok") {
+      console.log(`[SLACK TEST] ✅ Successfully sent deployment test message to Slack`);
+    } else {
+      console.warn(`[SLACK TEST] ⚠️ Unexpected response from Slack: ${responseText}`);
+      console.log(`[SLACK TEST] ✅ Message sent (response: ${responseText})`);
+    }
   } catch (error) {
     console.error("[SLACK TEST] ❌ Failed to send Slack test message:", error);
     if (error instanceof Error) {
