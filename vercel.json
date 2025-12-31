@@ -12,6 +12,10 @@
     {
       "src": "api/cron/check-wallet.ts",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/deploy-hook.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [

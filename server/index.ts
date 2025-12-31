@@ -5,6 +5,7 @@ import path from "path";
 import { getWalletPortfolio, getWalletPositions } from "../lib/for-wenbo-main/queries/wallet";
 import { startMarketMonitoring } from "./market-monitor";
 import { startWalletMonitoring } from "./wallet-monitor";
+import { sendSlackTestMessage } from "./slack-test";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -224,13 +225,28 @@ app.post("/api/wallet/check", async (req, res) => {
   }
 });
 
+// Test Slack notification endpoint
+app.post("/api/slack/test", async (req, res) => {
+  try {
+    const { sendSlackTestMessage } = await import("./slack-test");
+    await sendSlackTestMessage();
+    res.json({ success: true, message: "Test message sent to Slack" });
+  } catch (error) {
+    console.error("Error sending test message:", error);
+    res.status(500).json({ 
+      error: "Failed to send test message",
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Only start the server if this file is run directly (not imported as a module)
 // In Vercel/serverless environments, the app will be exported and handled by the platform
 // Check if we're running in a serverless environment
 const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
 if (!isServerless && typeof require !== 'undefined' && require.main === module) {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`Server running on http://localhost:${PORT}`);
     // Start market monitoring when server starts (only in non-serverless environments)
     // Note: In serverless environments (Vercel), use the /api/markets/check endpoint
@@ -238,6 +254,17 @@ if (!isServerless && typeof require !== 'undefined' && require.main === module) 
     startMarketMonitoring();
     // Start wallet monitoring (checks every 5 minutes)
     startWalletMonitoring();
+    
+    // Send test message to Slack on deployment (only in production/Vercel)
+    if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+      setTimeout(async () => {
+        try {
+          await sendSlackTestMessage();
+        } catch (error) {
+          console.error("Failed to send deployment test message:", error);
+        }
+      }, 2000); // Wait 2 seconds for server to fully start
+    }
   });
 }
 

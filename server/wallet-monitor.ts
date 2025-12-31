@@ -182,6 +182,19 @@ export async function checkWalletAndSendReport(): Promise<void> {
   try {
     console.log(`Checking wallet ${TRACKED_WALLET}...`);
     
+    // Send test message on first run (for deployment notification)
+    if (isFirstRun) {
+      isFirstRun = false;
+      try {
+        const { sendSlackTestMessage } = await import("./slack-test");
+        await sendSlackTestMessage();
+        console.log("Sent deployment test message to Slack");
+      } catch (error) {
+        console.error("Failed to send deployment test message:", error);
+        // Continue with wallet check even if test message fails
+      }
+    }
+    
     // Fetch portfolio and positions
     const [portfolio, positions] = await Promise.all([
       getWalletPortfolio(TRACKED_WALLET),
@@ -213,6 +226,7 @@ export async function checkWalletAndSendReport(): Promise<void> {
 }
 
 let intervalId: NodeJS.Timeout | null = null;
+let isFirstRun = true;
 
 /**
  * Start the wallet monitoring service
@@ -239,6 +253,13 @@ export function startWalletMonitoring(): void {
   }, CHECK_INTERVAL_MS);
 
   console.log("Wallet monitoring service started");
+}
+
+/**
+ * Reset first run flag (useful for testing)
+ */
+export function resetFirstRun(): void {
+  isFirstRun = true;
 }
 
 /**
