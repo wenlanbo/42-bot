@@ -267,7 +267,31 @@
   </div>
 
   <script>
-    const API_BASE = 'http://localhost:3001/api';
+    // Dynamic API base URL - works for both local development and production
+    const API_BASE = (() => {
+      // If running on same origin (production), use relative path
+      if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        return '/api';
+      }
+      // Local development - use explicit localhost
+      return 'http://localhost:3001/api';
+    })();
+
+    // Handle back/forward cache (bfcache) to prevent extension port errors
+    window.addEventListener('pageshow', (event) => {
+      // If page was restored from bfcache, reload tracked wallets
+      if (event.persisted) {
+        loadTrackedWallets();
+      }
+    });
+
+    // Handle page visibility changes (another bfcache mitigation)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        // Page became visible again, refresh data
+        loadTrackedWallets();
+      }
+    });
 
     // Load tracked wallets on page load
     window.addEventListener('DOMContentLoaded', () => {

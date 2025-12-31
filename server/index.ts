@@ -6,10 +6,25 @@ import { getWalletPortfolio, getWalletPositions } from "../lib/for-wenbo-main/qu
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const TRACKED_WALLETS_FILE = path.join(__dirname, "tracked-wallets.json");
+// Use /tmp for serverless environments (Vercel), fallback to __dirname for local
+const TRACKED_WALLETS_FILE = process.env.VERCEL 
+  ? "/tmp/tracked-wallets.json"
+  : path.join(__dirname, "tracked-wallets.json");
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from frontend directory
+// In Vercel, use process.cwd() as the base path
+const frontendPath = process.env.VERCEL 
+  ? path.join(process.cwd(), "frontend")
+  : path.join(__dirname, "..", "frontend");
+app.use(express.static(frontendPath));
+
+// Serve frontend HTML for root route
+app.get("/", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
 
 // Ensure tracked wallets file exists
 async function ensureTrackedWalletsFile() {
@@ -177,7 +192,17 @@ app.get("/api/tracked-wallets/positions", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+// Only start the server if this file is run directly (not imported as a module)
+// In Vercel/serverless environments, the app will be exported and handled by the platform
+// Check if we're running in a serverless environment
+const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+if (!isServerless && typeof require !== 'undefined' && require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+// Export the app for serverless environments (Vercel, etc.)
+export default app;
 
