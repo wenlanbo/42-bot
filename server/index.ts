@@ -120,15 +120,49 @@ app.get("/api/wallet/:walletAddress/portfolio", async (req, res) => {
   try {
     const { walletAddress } = req.params;
     
+    console.log(`[API] GET /api/wallet/${walletAddress}/portfolio`);
+    
     if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
       return res.status(400).json({ error: "Invalid wallet address format" });
     }
 
+    // Check if GraphQL endpoint is configured
+    const gqlEndpoint = process.env.NEXT_PUBLIC_HASURA_GQL_ENDPOINT || process.env.HASURA_GQL_ENDPOINT;
+    if (!gqlEndpoint) {
+      console.error("[API] ❌ GraphQL endpoint not configured");
+      return res.status(500).json({ 
+        error: "GraphQL endpoint not configured",
+        message: "Please set NEXT_PUBLIC_HASURA_GQL_ENDPOINT environment variable",
+        details: "The server is trying to connect to localhost:8080 which doesn't work on Vercel"
+      });
+    }
+
+    console.log(`[API] Fetching portfolio for ${walletAddress}...`);
     const portfolio = await getWalletPortfolio(walletAddress);
+    console.log(`[API] ✅ Portfolio fetched: $${portfolio.toFixed(2)}`);
     res.json({ walletAddress, portfolio });
   } catch (error) {
-    console.error("Error fetching portfolio:", error);
-    res.status(500).json({ error: "Failed to fetch portfolio" });
+    console.error("[API] ❌ Error fetching portfolio:", error);
+    if (error instanceof Error) {
+      console.error("[API] Error message:", error.message);
+      console.error("[API] Error stack:", error.stack);
+      
+      // Check if it's a connection error
+      if (error.message.includes("ECONNREFUSED") || error.message.includes("localhost")) {
+        return res.status(500).json({ 
+          error: "Failed to connect to GraphQL endpoint",
+          message: "GraphQL endpoint is not accessible. Please check NEXT_PUBLIC_HASURA_GQL_ENDPOINT environment variable.",
+          details: error.message
+        });
+      }
+      
+      return res.status(500).json({ 
+        error: "Failed to fetch portfolio",
+        message: error.message,
+        details: error.stack
+      });
+    }
+    res.status(500).json({ error: "Failed to fetch portfolio", message: "Unknown error" });
   }
 });
 
@@ -137,15 +171,49 @@ app.get("/api/wallet/:walletAddress/positions", async (req, res) => {
   try {
     const { walletAddress } = req.params;
     
+    console.log(`[API] GET /api/wallet/${walletAddress}/positions`);
+    
     if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
       return res.status(400).json({ error: "Invalid wallet address format" });
     }
 
+    // Check if GraphQL endpoint is configured
+    const gqlEndpoint = process.env.NEXT_PUBLIC_HASURA_GQL_ENDPOINT || process.env.HASURA_GQL_ENDPOINT;
+    if (!gqlEndpoint) {
+      console.error("[API] ❌ GraphQL endpoint not configured");
+      return res.status(500).json({ 
+        error: "GraphQL endpoint not configured",
+        message: "Please set NEXT_PUBLIC_HASURA_GQL_ENDPOINT environment variable",
+        details: "The server is trying to connect to localhost:8080 which doesn't work on Vercel"
+      });
+    }
+
+    console.log(`[API] Fetching positions for ${walletAddress}...`);
     const positions = await getWalletPositions(walletAddress);
+    console.log(`[API] ✅ Positions fetched: ${positions.length} positions`);
     res.json({ walletAddress, positions });
   } catch (error) {
-    console.error("Error fetching positions:", error);
-    res.status(500).json({ error: "Failed to fetch positions" });
+    console.error("[API] ❌ Error fetching positions:", error);
+    if (error instanceof Error) {
+      console.error("[API] Error message:", error.message);
+      console.error("[API] Error stack:", error.stack);
+      
+      // Check if it's a connection error
+      if (error.message.includes("ECONNREFUSED") || error.message.includes("localhost")) {
+        return res.status(500).json({ 
+          error: "Failed to connect to GraphQL endpoint",
+          message: "GraphQL endpoint is not accessible. Please check NEXT_PUBLIC_HASURA_GQL_ENDPOINT environment variable.",
+          details: error.message
+        });
+      }
+      
+      return res.status(500).json({ 
+        error: "Failed to fetch positions",
+        message: error.message,
+        details: error.stack
+      });
+    }
+    res.status(500).json({ error: "Failed to fetch positions", message: "Unknown error" });
   }
 });
 

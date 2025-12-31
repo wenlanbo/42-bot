@@ -298,8 +298,16 @@
         const response = await fetch(`${API_BASE}/wallet/${WALLET_ADDRESS}/portfolio`);
         const data = await response.json();
 
+        if (!response.ok) {
+          const errorMsg = data.message || data.error || 'Failed to load portfolio';
+          const details = data.details ? `<br><small>${data.details}</small>` : '';
+          portfolioDiv.innerHTML = `<div class="error">${errorMsg}${details}</div>`;
+          console.error('Portfolio API error:', data);
+          return;
+        }
+
         if (data.error) {
-          portfolioDiv.innerHTML = `<div class="error">${data.error}</div>`;
+          portfolioDiv.innerHTML = `<div class="error">${data.error}${data.message ? ': ' + data.message : ''}</div>`;
           return;
         }
 
@@ -311,6 +319,7 @@
         `;
       } catch (error) {
         portfolioDiv.innerHTML = `<div class="error">Error loading portfolio: ${error.message}</div>`;
+        console.error('Portfolio fetch error:', error);
       }
     }
 
@@ -322,8 +331,16 @@
         const response = await fetch(`${API_BASE}/wallet/${WALLET_ADDRESS}/positions`);
         const data = await response.json();
 
+        if (!response.ok) {
+          const errorMsg = data.message || data.error || 'Failed to load positions';
+          const details = data.details ? `<br><small>${data.details}</small>` : '';
+          positionsDiv.innerHTML = `<div class="error">${errorMsg}${details}</div>`;
+          console.error('Positions API error:', data);
+          return;
+        }
+
         if (data.error) {
-          positionsDiv.innerHTML = `<div class="error">${data.error}</div>`;
+          positionsDiv.innerHTML = `<div class="error">${data.error}${data.message ? ': ' + data.message : ''}</div>`;
           return;
         }
 
