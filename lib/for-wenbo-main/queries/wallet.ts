@@ -112,10 +112,16 @@ export async function getWalletPortfolio(
       }
     }
 
-    offset += pageSize;
+      offset += pageSize;
 
-    if (result.ledger.length < pageSize) {
+      if (entries.length < pageSize) {
+        hasMore = false;
+      }
+    } catch (error) {
+      console.error(`[WALLET PORTFOLIO] Error fetching positions at offset ${offset}:`, error);
+      // If we get an error, break to avoid infinite loop
       hasMore = false;
+      throw error;
     }
   }
 
