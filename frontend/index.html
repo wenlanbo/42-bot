@@ -222,6 +222,38 @@
     .refresh-btn {
       margin-top: 10px;
     }
+
+    .markets-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .markets-table th,
+    .markets-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .markets-table th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .market-title {
+      font-weight: 600;
+      color: #667eea;
+      margin-bottom: 5px;
+    }
+
+    .market-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -262,6 +294,14 @@
       <button class="btn-secondary refresh-btn" onclick="loadPositions()">Refresh Positions</button>
       <div id="positionsList">
         <div class="loading">Click refresh to load positions</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Unresolved Markets</h2>
+      <button class="btn-secondary refresh-btn" onclick="loadMarkets()">Refresh Markets</button>
+      <div id="marketsList">
+        <div class="loading">Click refresh to load markets</div>
       </div>
     </div>
   </div>
@@ -483,6 +523,53 @@
         alert(details);
       } catch (error) {
         alert('Error loading wallet details: ' + error.message);
+      }
+    }
+
+    async function loadMarkets() {
+      const marketsDiv = document.getElementById('marketsList');
+      marketsDiv.innerHTML = '<div class="loading">Loading markets...</div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/markets/unresolved`);
+        const data = await response.json();
+
+        if (data.markets.length === 0) {
+          marketsDiv.innerHTML = '<div class="empty-state">No unresolved markets found</div>';
+          return;
+        }
+
+        marketsDiv.innerHTML = data.markets.map(market => `
+          <div class="market-section">
+            <div class="market-title">${market.title}</div>
+            <div class="wallet-address" style="margin-bottom: 10px;">${market.market_address}</div>
+            <div style="margin-bottom: 15px;">
+              <strong>Total Liquidity:</strong> $${market.total_liquidity.toFixed(2)}
+            </div>
+            <table class="markets-table">
+              <thead>
+                <tr>
+                  <th>Token ID</th>
+                  <th>Price</th>
+                  <th>Total Supply</th>
+                  <th>Market Cap</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${market.outcome_tokens.map(token => `
+                  <tr>
+                    <td>${token.token_id}</td>
+                    <td>$${token.price.toFixed(4)}</td>
+                    <td>${token.total_supply.toFixed(2)}</td>
+                    <td>$${(token.price * token.total_supply).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `).join('');
+      } catch (error) {
+        marketsDiv.innerHTML = `<div class="error">Error loading markets: ${error.message}</div>`;
       }
     }
 

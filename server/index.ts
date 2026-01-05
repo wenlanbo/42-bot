@@ -3,6 +3,7 @@ import cors from "cors";
 import fs from "fs/promises";
 import path from "path";
 import { getWalletPortfolio, getWalletPositions } from "../lib/for-wenbo-main/queries/wallet";
+import { getMarketsWithMetrics } from "../lib/for-wenbo-main/queries/market";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -174,6 +175,17 @@ app.get("/api/tracked-wallets/positions", async (req, res) => {
   } catch (error) {
     console.error("Error fetching tracked wallets positions:", error);
     res.status(500).json({ error: "Failed to fetch tracked wallets positions" });
+  }
+});
+
+// Get all unresolved markets with metrics
+app.get("/api/markets/unresolved", async (req, res) => {
+  try {
+    const markets = await getMarketsWithMetrics();
+    res.json({ markets });
+  } catch (error) {
+    console.error("Error fetching unresolved markets:", error);
+    res.status(500).json({ error: "Failed to fetch unresolved markets" });
   }
 });
 
