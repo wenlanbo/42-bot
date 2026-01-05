@@ -267,11 +267,22 @@ app.get("/api/tracked-wallets/positions", async (req, res) => {
 // Get all unresolved markets with metrics
 app.get("/api/markets/unresolved", async (req, res) => {
   try {
+    console.log("[API] Fetching unresolved markets...");
     const markets = await getMarketsWithMetrics();
+    console.log(`[API] ✅ Found ${markets.length} unresolved markets`);
     res.json({ markets });
   } catch (error) {
-    console.error("Error fetching unresolved markets:", error);
-    res.status(500).json({ error: "Failed to fetch unresolved markets" });
+    console.error("[API] ❌ Error fetching unresolved markets:", error);
+    if (error instanceof Error) {
+      console.error("[API] Error message:", error.message);
+      console.error("[API] Error stack:", error.stack);
+      return res.status(500).json({
+        error: "Failed to fetch unresolved markets",
+        message: error.message,
+        details: error.stack
+      });
+    }
+    res.status(500).json({ error: "Failed to fetch unresolved markets", message: "Unknown error" });
   }
 });
 

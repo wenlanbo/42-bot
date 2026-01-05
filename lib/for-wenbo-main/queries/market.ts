@@ -33,11 +33,6 @@ export const GET_UNRESOLVED_MARKETS = gql`
       offset: $offset
       order_by: [{ market_address: asc }, { token_id: asc }, { block_timestamp: desc }]
       distinct_on: [market_address, token_id]
-      where: {
-        question: {
-          question_resolves: { answer: { _is_null: true } }
-        }
-      }
     ) {
       market_address
       token_id
@@ -226,6 +221,12 @@ export async function getMarketsWithMetrics(): Promise<MarketMetrics[]> {
 
     // Process each ledger entry (one per market/token combination)
     for (const entry of result.ledger) {
+      // Skip if market is resolved (has an answer)
+      const isResolved = entry.question?.question_resolves?.[0]?.answer != null;
+      if (isResolved) {
+        continue;
+      }
+
       const marketAddress = entry.market_address;
 
       // Get or create market entry
