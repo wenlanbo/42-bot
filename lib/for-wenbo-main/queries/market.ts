@@ -38,8 +38,7 @@ export const GET_UNRESOLVED_MARKETS = gql`
       token_id
       question {
         id
-        question_text
-        created_at
+        Title
         question_resolves(limit: 1, order_by: { block_timestamp: desc }) {
           answer
         }
@@ -96,8 +95,7 @@ interface UnresolvedMarketsResponse {
     token_id: string;
     question: {
       id: string;
-      question_text: string;
-      created_at: string;
+      Title: string;
       question_resolves: Array<{
         answer: string | null;
       }>;
@@ -237,7 +235,7 @@ export async function getMarketsWithMetrics(): Promise<MarketMetrics[]> {
         marketMap.set(marketAddress, {
           market_address: marketAddress,
           question_id: entry.question.id,
-          title: entry.question.question_text || "Untitled Market",
+          title: entry.question.Title || `Market ${marketAddress.slice(0, 10)}...`,
           description: "", // Not available in ledger query
           total_liquidity: totalLiquidity,
           outcome_tokens: [],
