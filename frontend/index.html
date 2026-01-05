@@ -470,6 +470,20 @@
         const response = await fetch(`${API_BASE}/markets/unresolved`);
         const data = await response.json();
 
+        // Check if API returned an error
+        if (!response.ok || data.error) {
+          marketsDiv.innerHTML = `<div class="error">API Error: ${data.error || data.message || 'Failed to fetch markets'}</div>`;
+          console.error('API Error:', data);
+          return;
+        }
+
+        // Check if markets array exists
+        if (!data.markets) {
+          marketsDiv.innerHTML = '<div class="error">Invalid API response: markets data missing</div>';
+          console.error('Invalid response:', data);
+          return;
+        }
+
         if (data.markets.length === 0) {
           marketsDiv.innerHTML = '<div class="empty-state">No unresolved markets found</div>';
           return;
