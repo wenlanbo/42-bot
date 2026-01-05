@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/cron/check-markets.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/cron/check-wallet.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/deploy-hook.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.ts"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/check-markets",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/check-wallet",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

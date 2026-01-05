@@ -21,59 +21,64 @@ export async function getWalletPortfolio(
   const claims: MarketClaims = {};
   let portfolio = 0;
 
-  // Fetch all market claims for this wallet
+  // Fetch all market claims for this wallet (filtered at database level)
   let offset = 0;
   let hasMore = true;
   const pageSize = 1000;
+  const normalizedWalletAddress = walletAddress.toLowerCase();
 
   while (hasMore) {
-    const result = await GQL_CLIENT.request<
-      GetMarketClaimsQuery,
-      GetMarketClaimsQueryVariables
-    >(GET_MARKET_CLAIMS, {
-      limit: pageSize,
-      offset,
-    });
+    try {
+      const result = await GQL_CLIENT.request<{
+        market_claim: ClaimEntry[];
+      }>(GET_MARKET_CLAIMS_BY_WALLET, {
+        limit: pageSize,
+        offset,
+        userAddress: normalizedWalletAddress,
+      });
 
-    const entries = result.market_claim.filter(
-      (entry: ClaimEntry) => entry.user_address.toLowerCase() === walletAddress.toLowerCase()
-    );
+      const entries = result.market_claim || [];
 
-    if (entries.length === 0 && result.market_claim.length < pageSize) {
+      if (entries.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      processClaims(claims, entries);
+
+      offset += pageSize;
+
+      if (entries.length < pageSize) {
+        hasMore = false;
+      }
+    } catch (error) {
+      console.error(`[WALLET PORTFOLIO] Error fetching market claims at offset ${offset}:`, error);
+      // If we get an error, break to avoid infinite loop
       hasMore = false;
-      break;
-    }
-
-    processClaims(claims, entries);
-
-    offset += pageSize;
-
-    if (result.market_claim.length < pageSize) {
-      hasMore = false;
+      throw error;
     }
   }
 
-  // Fetch last positions for this wallet
+  // Fetch last positions for this wallet (filtered at database level)
   offset = 0;
   hasMore = true;
 
   while (hasMore) {
-    const result = await GQL_CLIENT.request<
-      GetLastPositionQuery,
-      GetLastPositionQueryVariables
-    >(GET_LAST_POSITION, {
-      limit: pageSize,
-      offset,
-    });
+    try {
+      const result = await GQL_CLIENT.request<{
+        ledger: LastPositionEntry[];
+      }>(GET_LAST_POSITION_BY_WALLET, {
+        limit: pageSize,
+        offset,
+        userAddress: normalizedWalletAddress,
+      });
 
-    const entries = result.ledger.filter(
-      (entry: LastPositionEntry) => entry.user_address.toLowerCase() === walletAddress.toLowerCase()
-    );
+      const entries = result.ledger || [];
 
-    if (entries.length === 0 && result.ledger.length < pageSize) {
-      hasMore = false;
-      break;
-    }
+      if (entries.length === 0) {
+        hasMore = false;
+        break;
+      }
 
     for (const entry of entries) {
       const { market_address, token_id, question } = entry;
@@ -107,10 +112,16 @@ export async function getWalletPortfolio(
       }
     }
 
-    offset += pageSize;
+      offset += pageSize;
 
-    if (result.ledger.length < pageSize) {
+      if (entries.length < pageSize) {
+        hasMore = false;
+      }
+    } catch (error) {
+      console.error(`[WALLET PORTFOLIO] Error fetching positions at offset ${offset}:`, error);
+      // If we get an error, break to avoid infinite loop
       hasMore = false;
+      throw error;
     }
   }
 
@@ -144,24 +155,24 @@ export async function getWalletPositions(walletAddress: string) {
   let offset = 0;
   let hasMore = true;
   const pageSize = 1000;
+  const normalizedWalletAddress = walletAddress.toLowerCase();
 
   while (hasMore) {
-    const result = await GQL_CLIENT.request<
-      GetLastPositionQuery,
-      GetLastPositionQueryVariables
-    >(GET_LAST_POSITION, {
-      limit: pageSize,
-      offset,
-    });
+    try {
+      const result = await GQL_CLIENT.request<{
+        ledger: LastPositionEntry[];
+      }>(GET_LAST_POSITION_BY_WALLET, {
+        limit: pageSize,
+        offset,
+        userAddress: normalizedWalletAddress,
+      });
 
-    const entries = result.ledger.filter(
-      (entry: LastPositionEntry) => entry.user_address.toLowerCase() === walletAddress.toLowerCase()
-    );
+      const entries = result.ledger || [];
 
-    if (entries.length === 0 && result.ledger.length < pageSize) {
-      hasMore = false;
-      break;
-    }
+      if (entries.length === 0) {
+        hasMore = false;
+        break;
+      }
 
     for (const entry of entries) {
       const quantity = parseFloat(entry.current_quantity_hmr || "0");
@@ -196,10 +207,16 @@ export async function getWalletPositions(walletAddress: string) {
       }
     }
 
-    offset += pageSize;
+      offset += pageSize;
 
-    if (result.ledger.length < pageSize) {
+      if (entries.length < pageSize) {
+        hasMore = false;
+      }
+    } catch (error) {
+      console.error(`[WALLET POSITIONS] Error fetching positions at offset ${offset}:`, error);
+      // If we get an error, break to avoid infinite loop
       hasMore = false;
+      throw error;
     }
   }
 
@@ -243,12 +260,72 @@ export const GET_LAST_POSITION = gql`
   }
 `;
 
+// Query filtered by wallet address for efficiency
+export const GET_LAST_POSITION_BY_WALLET = gql`
+  query GetLastPositionByWallet($limit: Int!, $offset: Int!, $userAddress: String!) {
+    ledger(
+      limit: $limit
+      offset: $offset
+      where: { user_address: { _eq: $userAddress } }
+      order_by: [
+        { market_address: asc }
+        { token_id: asc }
+        { block_timestamp: desc }
+      ]
+      distinct_on: [market_address, token_id]
+    ) {
+      user_address
+      market_address
+      token_id
+      current_quantity_hmr
+      delta_quantity
+      realized_pnl_hmr
+      block_timestamp
+      event_type
+      outcome {
+        outcome_stats(limit: 1, order_by: [{ block_timestamp: desc }]) {
+          marginal_price_hmr
+          payout_hmr
+        }
+      }
+      question {
+        question_resolves(limit: 1, order_by: { block_timestamp: desc }) {
+          answer
+          block_timestamp
+        }
+      }
+    }
+  }
+`;
+
 export const GET_MARKET_CLAIMS = gql`
   query GetMarketClaims($limit: Int!, $offset: Int!) {
     market_claim(
       limit: $limit
       offset: $offset
       where: { quantity: { _gt: "0" } }
+    ) {
+      id
+      user_address
+      market_address
+      quantity
+      token_id
+      block_timestamp
+      collateral
+    }
+  }
+`;
+
+// Query filtered by wallet address for efficiency
+export const GET_MARKET_CLAIMS_BY_WALLET = gql`
+  query GetMarketClaimsByWallet($limit: Int!, $offset: Int!, $userAddress: String!) {
+    market_claim(
+      limit: $limit
+      offset: $offset
+      where: { 
+        quantity: { _gt: "0" }
+        user_address: { _eq: $userAddress }
+      }
     ) {
       id
       user_address

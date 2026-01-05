@@ -6,7 +6,18 @@ dotenv.config();
 
 const GQL_ENDPOINT =
   process.env.NEXT_PUBLIC_HASURA_GQL_ENDPOINT ||
+  process.env.HASURA_GQL_ENDPOINT ||
   "http://localhost:8080/v1/graphql";
+
+// Validate that we have a GraphQL endpoint configured
+if (!process.env.NEXT_PUBLIC_HASURA_GQL_ENDPOINT && !process.env.HASURA_GQL_ENDPOINT) {
+  console.warn(
+    "[GQL CLIENT] ⚠️ WARNING: No GraphQL endpoint configured. Using default localhost:8080"
+  );
+  console.warn(
+    "[GQL CLIENT] Please set NEXT_PUBLIC_HASURA_GQL_ENDPOINT or HASURA_GQL_ENDPOINT environment variable"
+  );
+}
 
 const GQL_ENDPOINT_WS = (() => {
   const url = new URL(GQL_ENDPOINT);
@@ -18,6 +29,10 @@ const headers: Record<string, string> = {};
 if (process.env.HASURA_ADMIN_SECRET) {
   headers["x-hasura-admin-secret"] = process.env.HASURA_ADMIN_SECRET;
 }
+
+console.log(`[GQL CLIENT] Initializing GraphQL client`);
+console.log(`[GQL CLIENT] Endpoint: ${GQL_ENDPOINT}`);
+console.log(`[GQL CLIENT] Has admin secret: ${!!headers["x-hasura-admin-secret"]}`);
 
 export const GQL_CLIENT = new GraphQLClient(GQL_ENDPOINT, {
   headers,
