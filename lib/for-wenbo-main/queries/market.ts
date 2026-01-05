@@ -70,7 +70,7 @@ export const GET_MARKET_LIQUIDITY = gql`
 export const GET_MARKET_TOKEN_SUPPLY = gql`
   query GetMarketTokenSupply(
     $marketAddress: String!
-    $tokenId: Int!
+    $tokenId: bigint!
     $limit: Int!
     $offset: Int!
   ) {
