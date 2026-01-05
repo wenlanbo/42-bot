@@ -462,6 +462,14 @@
       }
     }
 
+    // Format number with USD format (commas and 2 decimals)
+    function formatUSD(number, decimals = 2) {
+      return number.toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+      });
+    }
+
     async function loadMarkets() {
       const marketsDiv = document.getElementById('marketsList');
       marketsDiv.innerHTML = '<div class="loading">Loading markets...</div>';
@@ -494,7 +502,7 @@
             <div class="market-title">${market.title}</div>
             <div class="wallet-address" style="margin-bottom: 10px;">${market.market_address}</div>
             <div style="margin-bottom: 15px;">
-              <strong>Total Liquidity:</strong> $${market.total_liquidity.toFixed(2)}
+              <strong>Total Liquidity:</strong> $${formatUSD(market.total_liquidity)}
             </div>
             <table class="markets-table">
               <thead>
@@ -509,9 +517,9 @@
                 ${market.outcome_tokens.map(token => `
                   <tr>
                     <td>${token.token_id}</td>
-                    <td>$${token.price.toFixed(4)}</td>
-                    <td>${token.total_supply.toFixed(2)}</td>
-                    <td>$${(token.price * token.total_supply).toFixed(2)}</td>
+                    <td>$${formatUSD(token.price, 4)}</td>
+                    <td>${formatUSD(token.total_supply)}</td>
+                    <td>$${formatUSD(token.price * token.total_supply)}</td>
                   </tr>
                 `).join('')}
               </tbody>
