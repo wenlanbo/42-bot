@@ -70,7 +70,7 @@ export const GET_MARKET_LIQUIDITY = gql`
 export const GET_MARKET_TOKEN_SUPPLY = gql`
   query GetMarketTokenSupply(
     $marketAddress: String!
-    $tokenId: String!
+    $tokenId: Int!
     $limit: Int!
     $offset: Int!
   ) {
@@ -163,7 +163,7 @@ async function calculateMarketLiquidity(
  */
 async function calculateTokenSupply(
   marketAddress: string,
-  tokenId: string
+  tokenId: number
 ): Promise<number> {
   let totalSupply = 0;
   let offset = 0;
@@ -250,7 +250,7 @@ export async function getMarketsWithMetrics(): Promise<MarketMetrics[]> {
       // Calculate total supply for this token
       const totalSupply = await calculateTokenSupply(
         marketAddress,
-        entry.token_id
+        parseInt(entry.token_id)
       );
 
       market.outcome_tokens.push({
