@@ -11,8 +11,10 @@ import { GQL_CLIENT } from "../gql";
 // TypeScript Interfaces
 export interface OutcomeTokenMetrics {
   token_id: string;
+  description?: string;
   price: number;
   total_supply: number;
+  payoff: number;
   market_address: string;
 }
 
@@ -44,6 +46,7 @@ export const GET_UNRESOLVED_MARKETS = gql`
         }
       }
       outcome {
+        description
         outcome_stats(limit: 1, order_by: { block_timestamp: desc }) {
           marginal_price_hmr
           block_timestamp
@@ -101,6 +104,7 @@ interface UnresolvedMarketsResponse {
       }>;
     };
     outcome: {
+      description?: string;
       outcome_stats: Array<{
         marginal_price_hmr: string;
         block_timestamp: string;
@@ -255,10 +259,17 @@ export async function getMarketsWithMetrics(): Promise<MarketMetrics[]> {
         parseInt(entry.token_id)
       );
 
+      // Calculate payoff: (total_liquidity / total_supply) / price
+      const payoff = totalSupply > 0 && price > 0
+        ? (market.total_liquidity / totalSupply) / price
+        : 0;
+
       market.outcome_tokens.push({
         token_id: entry.token_id,
+        description: entry.outcome?.description,
         price,
         total_supply: totalSupply,
+        payoff,
         market_address: marketAddress,
       });
     }
