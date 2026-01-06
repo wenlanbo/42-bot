@@ -125,7 +125,7 @@ interface MarketTokenSupplyResponse {
 
 /**
  * Calculate total liquidity for a specific market
- * Sums absolute value of all delta_collateral_hmr to represent trading volume
+ * Net liquidity: buys add to liquidity, sells subtract from liquidity
  */
 async function calculateMarketLiquidity(
   marketAddress: string
@@ -145,9 +145,9 @@ async function calculateMarketLiquidity(
       }
     );
 
-    // Sum absolute value of all collateral deltas
+    // Sum all collateral deltas (buys are positive, sells are negative)
     for (const entry of result.ledger) {
-      totalLiquidity += Math.abs(parseFloat(entry.delta_collateral_hmr || "0"));
+      totalLiquidity += parseFloat(entry.delta_collateral_hmr || "0");
     }
 
     offset += pageSize;
