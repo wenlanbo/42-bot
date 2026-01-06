@@ -508,7 +508,6 @@
               <thead>
                 <tr>
                   <th>Token ID</th>
-                  <th>Description</th>
                   <th>Price</th>
                   <th>Total Supply</th>
                   <th>Market Cap</th>
@@ -519,7 +518,6 @@
                 ${market.outcome_tokens.map(token => `
                   <tr>
                     <td>${token.token_id}</td>
-                    <td>${token.description || 'N/A'}</td>
                     <td>$${formatUSD(token.price, 4)}</td>
                     <td>${formatUSD(token.total_supply)}</td>
                     <td>$${formatUSD(token.price * token.total_supply)}</td>
