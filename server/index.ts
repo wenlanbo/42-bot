@@ -276,10 +276,15 @@ app.get("/api/markets/unresolved", async (req, res) => {
     if (error instanceof Error) {
       console.error("[API] Error message:", error.message);
       console.error("[API] Error stack:", error.stack);
+      // Log the full error object for GraphQL errors
+      if ('response' in error) {
+        console.error("[API] GraphQL Response Error:", JSON.stringify((error as any).response, null, 2));
+      }
       return res.status(500).json({
         error: "Failed to fetch unresolved markets",
         message: error.message,
-        details: error.stack
+        details: error.stack,
+        graphqlError: 'response' in error ? (error as any).response : undefined
       });
     }
     res.status(500).json({ error: "Failed to fetch unresolved markets", message: "Unknown error" });
