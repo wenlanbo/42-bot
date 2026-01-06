@@ -501,6 +501,7 @@
           <div class="market-section">
             <div class="market-title">${market.title}</div>
             <div class="wallet-address" style="margin-bottom: 10px;">${market.market_address}</div>
+            ${market.question_text ? `<div style="margin-bottom: 10px; color: #666; font-style: italic;">${market.question_text}</div>` : ''}
             <div style="margin-bottom: 15px;">
               <strong>Total Liquidity:</strong> $${formatUSD(market.total_liquidity)}
             </div>
