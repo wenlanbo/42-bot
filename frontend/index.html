@@ -508,9 +508,9 @@
               <thead>
                 <tr>
                   <th>Token ID</th>
+                  <th>Description</th>
                   <th>Price</th>
                   <th>Total Supply</th>
-                  <th>Market Cap</th>
                   <th>Payoff</th>
                 </tr>
               </thead>
@@ -518,9 +518,9 @@
                 ${market.outcome_tokens.map(token => `
                   <tr>
                     <td>${token.token_id}</td>
+                    <td>${token.text || 'N/A'}</td>
                     <td>$${formatUSD(token.price, 4)}</td>
                     <td>${formatUSD(token.total_supply)}</td>
-                    <td>$${formatUSD(token.price * token.total_supply)}</td>
                     <td>${formatUSD(token.payoff, 4)}</td>
                   </tr>
                 `).join('')}
