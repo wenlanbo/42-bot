@@ -144,9 +144,12 @@ async function calculateMarketLiquidity(
       }
     );
 
-    // Sum all collateral deltas (buys are positive, sells are negative)
+    // Sum all collateral deltas from market's perspective
+    // If delta_collateral_hmr is from user's perspective, invert the sign
+    // User receives collateral (sells) = market loses collateral = negative for market
+    // User pays collateral (buys) = market gains collateral = positive for market
     for (const entry of result.ledger) {
-      totalLiquidity += parseFloat(entry.delta_collateral_hmr || "0");
+      totalLiquidity -= parseFloat(entry.delta_collateral_hmr || "0");
     }
 
     offset += pageSize;
