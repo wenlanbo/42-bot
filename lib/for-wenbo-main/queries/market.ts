@@ -15,7 +15,6 @@ export interface OutcomeTokenMetrics {
   total_supply: number;
   payoff: number;
   market_address: string;
-  symbol?: string;
 }
 
 export interface MarketMetrics {
@@ -49,7 +48,6 @@ export const GET_UNRESOLVED_MARKETS = gql`
           marginal_price_hmr
           block_timestamp
         }
-        symbol
       }
     }
   }
@@ -107,7 +105,6 @@ interface UnresolvedMarketsResponse {
         marginal_price_hmr: string;
         block_timestamp: string;
       }>;
-      symbol?: string | null;
     };
   }>;
 }
@@ -254,9 +251,6 @@ export async function getMarketsWithMetrics(): Promise<MarketMetrics[]> {
         entry.outcome?.outcome_stats[0]?.marginal_price_hmr || "0"
       );
 
-      // Extract symbol from outcome
-      const symbol = entry.outcome?.symbol;
-
       // Calculate total supply for this token
       const totalSupply = await calculateTokenSupply(
         marketAddress,
@@ -274,7 +268,6 @@ export async function getMarketsWithMetrics(): Promise<MarketMetrics[]> {
         total_supply: totalSupply,
         payoff,
         market_address: marketAddress,
-        symbol,
       });
     }
 

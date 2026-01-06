@@ -508,7 +508,6 @@
               <thead>
                 <tr>
                   <th>Token ID</th>
-                  <th>Symbol</th>
                   <th>Price</th>
                   <th>Total Supply</th>
                   <th>Payoff</th>
@@ -518,7 +517,6 @@
                 ${market.outcome_tokens.map(token => `
                   <tr>
                     <td>${token.token_id}</td>
-                    <td>${token.symbol || 'N/A'}</td>
                     <td>$${formatUSD(token.price, 4)}</td>
                     <td>${formatUSD(token.total_supply)}</td>
                     <td>${formatUSD(token.payoff, 4)}</td>
