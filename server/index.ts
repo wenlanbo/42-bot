@@ -291,6 +291,49 @@ app.get("/api/markets/unresolved", async (req, res) => {
   }
 });
 
+// Get top N highest payoff tokens across all markets
+app.get("/api/markets/top-payoff-tokens", async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    console.log(`[API] Fetching top ${limit} payoff tokens...`);
+
+    const markets = await getMarketsWithMetrics();
+
+    // Flatten all tokens from all markets and enrich with market info
+    const allTokens = markets.flatMap(market =>
+      market.outcome_tokens.map(token => ({
+        ...token,
+        market_title: market.title,
+        question_id: market.question_id
+      }))
+    );
+
+    // Sort by payoff descending and take top N
+    const topTokens = allTokens
+      .sort((a, b) => b.payoff - a.payoff)
+      .slice(0, limit);
+
+    console.log(`[API] ✅ Found ${topTokens.length} top payoff tokens`);
+    res.json({
+      tokens: topTokens,
+      count: topTokens.length,
+      limit
+    });
+  } catch (error) {
+    console.error("[API] ❌ Error fetching top payoff tokens:", error);
+    if (error instanceof Error) {
+      console.error("[API] Error message:", error.message);
+      console.error("[API] Error stack:", error.stack);
+      return res.status(500).json({
+        error: "Failed to fetch top payoff tokens",
+        message: error.message,
+        details: error.stack
+      });
+    }
+    res.status(500).json({ error: "Failed to fetch top payoff tokens", message: "Unknown error" });
+  }
+});
+
 // Market monitoring endpoint (can be called manually or by cron)
 app.post("/api/markets/check", async (req, res) => {
   try {

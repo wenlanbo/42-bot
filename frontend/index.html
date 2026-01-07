@@ -290,6 +290,14 @@
         <div class="loading">Click refresh to load markets</div>
       </div>
     </div>
+
+    <div class="card">
+      <h2 class="section-title">Top 10 Highest Payoff Tokens</h2>
+      <button class="btn-secondary refresh-btn" onclick="loadTopPayoffTokens()">Refresh Top Payoff</button>
+      <div id="topPayoffList">
+        <div class="loading">Click refresh to load top payoff tokens</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -530,6 +538,70 @@
         `).join('');
       } catch (error) {
         marketsDiv.innerHTML = `<div class="error">Error loading markets: ${error.message}</div>`;
+      }
+    }
+
+    async function loadTopPayoffTokens() {
+      const topPayoffDiv = document.getElementById('topPayoffList');
+      topPayoffDiv.innerHTML = '<div class="loading">Loading top payoff tokens...</div>';
+
+      try {
+        const response = await fetch(`${API_BASE}/markets/top-payoff-tokens?limit=10`);
+        const data = await response.json();
+
+        // Check if API returned an error
+        if (!response.ok || data.error) {
+          topPayoffDiv.innerHTML = `<div class="error">API Error: ${data.error || data.message || 'Failed to fetch top payoff tokens'}</div>`;
+          console.error('API Error:', data);
+          return;
+        }
+
+        // Check if tokens array exists
+        if (!data.tokens) {
+          topPayoffDiv.innerHTML = '<div class="error">Invalid API response: tokens data missing</div>';
+          console.error('Invalid response:', data);
+          return;
+        }
+
+        if (data.tokens.length === 0) {
+          topPayoffDiv.innerHTML = '<div class="empty-state">No tokens found</div>';
+          return;
+        }
+
+        topPayoffDiv.innerHTML = `
+          <table class="markets-table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Symbol</th>
+                <th>Market</th>
+                <th>Token ID</th>
+                <th>Price</th>
+                <th>Total Supply</th>
+                <th>Payoff</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.tokens.map((token, index) => `
+                <tr>
+                  <td><strong>#${index + 1}</strong></td>
+                  <td><strong>${token.symbol || 'N/A'}</strong></td>
+                  <td>
+                    <div class="market-title" style="font-size: 14px; margin-bottom: 3px;">${token.market_title}</div>
+                    <div class="wallet-address" style="font-size: 12px;">${token.market_address.slice(0, 10)}...</div>
+                  </td>
+                  <td>${token.token_id}</td>
+                  <td>$${formatUSD(token.price, 4)}</td>
+                  <td>${formatUSD(token.total_supply)}</td>
+                  <td><strong style="color: #27ae60;">${formatUSD(token.payoff, 4)}</strong></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } catch (error) {
+        topPayoffDiv.innerHTML = `<div class="error">Error loading top payoff tokens: ${error.message}</div>`;
+        console.error('Top payoff tokens fetch error:', error);
       }
     }
 
